@@ -36,7 +36,20 @@ public class StashBuilds {
         if (cause == null) {
             return;
         }
+        JenkinsLocationConfiguration globalConfig = new JenkinsLocationConfiguration();
+        //String rootUrl = globalConfig.getUrl();
+        String rootUrl = "http://localhost:8080/jenkins/";
+        String buildUrl = "";
+        if (rootUrl == null) {
+            buildUrl = " PLEASE SET JENKINS ROOT URL FROM GLOBAL CONFIGURATION " + run.getUrl();
+        }
+        else {
+            buildUrl = rootUrl + run.getUrl();
+        }
         try {
+            if(trigger.isSetBuildStatus()) {
+                repository.setCommitBuildStatus(Result.NOT_BUILT, cause.getSourceCommitHash(), buildUrl);
+            }
             run.setDescription(cause.getShortDescription());
         } catch (IOException e) {
             logger.log(Level.SEVERE, "Can't update build description", e);
@@ -50,7 +63,8 @@ public class StashBuilds {
         }
         Result result = run.getResult();
         JenkinsLocationConfiguration globalConfig = new JenkinsLocationConfiguration();
-        String rootUrl = globalConfig.getUrl();
+        //String rootUrl = globalConfig.getUrl();
+        String rootUrl = "http://localhost:8080/jenkins/";
         String buildUrl = "";
         if (rootUrl == null) {
             buildUrl = " PLEASE SET JENKINS ROOT URL FROM GLOBAL CONFIGURATION " + run.getUrl();
@@ -71,10 +85,15 @@ public class StashBuilds {
             }
         }
         String duration = run.getDurationString();
-        repository.postFinishedComment(cause.getPullRequestId(), cause.getSourceCommitHash(),
-                cause.getDestinationCommitHash(), result, buildUrl,
-                run.getNumber(), additionalComment, duration);
+        if(trigger.isPostBuildComments()) {
+            repository.postFinishedComment(cause.getPullRequestId(), cause.getSourceCommitHash(),
+                    cause.getDestinationCommitHash(), result, buildUrl,
+                    run.getNumber(), additionalComment, duration);
+        }
 
+        if(trigger.isSetBuildStatus()) {
+            repository.setCommitBuildStatus(result, cause.getSourceCommitHash(), buildUrl);
+        }
         //Merge PR
         StashBuildTrigger trig = StashBuildTrigger.getTrigger(run.getParent());
         if(trig.getMergeOnSuccess() && run.getResult() == Result.SUCCESS) {

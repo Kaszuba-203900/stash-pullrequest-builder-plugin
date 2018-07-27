@@ -2,12 +2,19 @@ package stashpullrequestbuilder.stashpullrequestbuilder;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.model.Result;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.HttpClientBuilder;
 import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashApiClient;
 import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashPullRequestComment;
 import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashPullRequestMergableResponse;
 import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashPullRequestResponseValue;
 import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashPullRequestResponseValueRepository;
 
+import javax.xml.bind.DatatypeConverter;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -374,5 +381,11 @@ public class StashRepository {
 
     private boolean isPhrasesContain(String text, String phrase) {
         return text != null && text.toLowerCase().contains(phrase.trim().toLowerCase());
+    }
+
+    void setCommitBuildStatus(Result result, String sourceCommitHash, String buildUrl) {
+        StashPostBuildStatus stashPostBuildStatus = new StashPostBuildStatus(result, trigger, buildUrl);
+        String url = client.buildStatusPath(sourceCommitHash);
+        this.client.postPullRequestStatus(stashPostBuildStatus, url);
     }
 }

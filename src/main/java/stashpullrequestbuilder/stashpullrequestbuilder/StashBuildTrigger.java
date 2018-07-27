@@ -65,6 +65,8 @@ public class StashBuildTrigger extends Trigger<Job<?, ?>> {
     private final boolean checkDestinationCommit;
     private final boolean checkMergeable;
     private final boolean mergeOnSuccess;
+    private final boolean setBuildStatus;
+    private final boolean postBuildComments;
     private final boolean checkNotConflicted;
     private final boolean onlyBuildOnComment;
     private final boolean deletePreviousBuildFinishComments;
@@ -88,12 +90,12 @@ public class StashBuildTrigger extends Trigger<Job<?, ?>> {
             boolean checkDestinationCommit,
             boolean checkMergeable,
             boolean mergeOnSuccess,
-            boolean checkNotConflicted,
+            boolean postBuildComments, boolean checkNotConflicted,
             boolean onlyBuildOnComment,
             String ciBuildPhrases,
             boolean deletePreviousBuildFinishComments,
             String targetBranchesToBuild,
-            boolean cancelOutdatedJobsEnabled
+            boolean setBuildStatus, boolean cancelOutdatedJobsEnabled
     ) throws ANTLRException {
         super(cron);
         this.projectPath = projectPath;
@@ -103,6 +105,8 @@ public class StashBuildTrigger extends Trigger<Job<?, ?>> {
         this.projectCode = projectCode;
         this.repositoryName = repositoryName;
         this.ciSkipPhrases = ciSkipPhrases;
+        this.postBuildComments = postBuildComments;
+        this.setBuildStatus = setBuildStatus;
         this.cancelOutdatedJobsEnabled = cancelOutdatedJobsEnabled;
         this.ciBuildPhrases = ciBuildPhrases == null ? "test this please" : ciBuildPhrases;
         this.ignoreSsl = ignoreSsl;
@@ -113,6 +117,7 @@ public class StashBuildTrigger extends Trigger<Job<?, ?>> {
         this.onlyBuildOnComment = onlyBuildOnComment;
         this.deletePreviousBuildFinishComments = deletePreviousBuildFinishComments;
         this.targetBranchesToBuild = targetBranchesToBuild;
+        logger.info("Comments: " + this.postBuildComments + " | Build status: " + this.setBuildStatus);
     }
 
     public String getStashHost() {
@@ -194,6 +199,10 @@ public class StashBuildTrigger extends Trigger<Job<?, ?>> {
     public boolean isCancelOutdatedJobsEnabled() {
         return cancelOutdatedJobsEnabled;
     }
+
+    public boolean isSetBuildStatus() { return setBuildStatus; }
+
+    public boolean isPostBuildComments() { return postBuildComments; }
 
     @Override
     public void start(Job<?, ?> job, boolean newInstance) {

@@ -29,6 +29,7 @@ import org.apache.http.protocol.HttpContext;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ObjectNode;
+import stashpullrequestbuilder.stashpullrequestbuilder.StashPostBuildStatus;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -62,6 +63,7 @@ public class StashApiClient {
     private static final ObjectMapper mapper = new ObjectMapper();
 
     private String apiBaseUrl;
+    private String domainBaseUrl;
 
     private String project;
     private String repositoryName;
@@ -74,6 +76,7 @@ public class StashApiClient {
         this.project = project;
         this.repositoryName = repositoryName;
         this.apiBaseUrl = stashHost.replaceAll("/$", "") + "/rest/api/1.0/projects/";
+        this.domainBaseUrl = stashHost;
         this.ignoreSsl = ignoreSsl;
     }
 
@@ -489,5 +492,26 @@ public class StashApiClient {
         return basePath.substring(0, basePath.length() - 1) + "?start=" + start;
     }
 
+    public String repositoryPath() {
+        return apiBaseUrl + this.project + "/repos/" + this.repositoryName + "/browse";
+    }
+
+    public String buildStatusPath(String commit) {
+        return domainBaseUrl + "/rest/build-status/1.0/commits/" + commit;
+    }
+
+    public void postPullRequestStatus(StashPostBuildStatus stashPostBuildStatus, String url) {
+        HttpClient httpClient = HttpClientBuilder.create().build();
+        try {
+            HttpPost request = new HttpPost(url);
+            request.setHeader("content-type", "application/json");
+            request.setHeader("Authorization", "Basic " + stashPostBuildStatus.getCredentials());
+            request.setEntity(stashPostBuildStatus.getFormattedEntity());
+            HttpResponse execute = httpClient.execute(request);
+            logger.info("Sent request on " + url + " to set build status. Result:  " + execute.getStatusLine().getStatusCode());
+        } catch (Exception ex) {
+            logger.info("Couldn't send request to set build status " + ex);
+        }
+    }
 }
 
